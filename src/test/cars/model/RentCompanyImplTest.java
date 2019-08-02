@@ -1,8 +1,6 @@
 package test.cars.model;
 
-import main.cars.dto.Car;
-import main.cars.dto.Driver;
-import main.cars.dto.Model;
+import main.cars.dto.*;
 import main.cars.model.AbstractRentCompany;
 import main.cars.model.RentCompanyImpl;
 import org.junit.jupiter.api.AfterEach;
@@ -11,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static main.cars.dto.CarsReturnCode.*;
@@ -61,12 +60,18 @@ class RentCompanyImplTest {
     private Car car3;
 
     private LocalDate RENT_DATE_1;
+    private LocalDate RENT_DATE_2;
+    private LocalDate RENT_DATE_3;
 
     private List<Car> CARS_DRIVER;
 
     private List<Driver> DRIVERS_CAR;
 
     private List<Car> CARS_MODEL;
+
+    private RentRecord rentRecord1;
+    private RentRecord rentRecord2;
+    private List<RentRecord> RECORDS_RENT_DATES;
 
     @BeforeEach
     void setUp() {
@@ -85,7 +90,9 @@ class RentCompanyImplTest {
         car3 = new Car(REG_NUMBER_3, COLOR_2, MODEL_NAME_1);
         rentCompany.addCar(car1);
 
-        RENT_DATE_1 = LocalDate.of(2019, 4,4);
+        RENT_DATE_1 = LocalDate.of(2018, 12,12);
+        RENT_DATE_2 = LocalDate.of(2019, 1,1);
+        RENT_DATE_3 = LocalDate.of(2019, 4,4);
 
         CARS_DRIVER = new ArrayList<>();
 
@@ -102,6 +109,11 @@ class RentCompanyImplTest {
         CARS_MODEL.add(car1);
         CARS_MODEL.add(car3);
 
+        rentRecord1 = new RentRecord(REG_NUMBER_1, LICENSE_ID_1, RENT_DATE_1);
+        rentRecord2 = new RentRecord(REG_NUMBER_1, LICENSE_ID_1, RENT_DATE_2);
+        RECORDS_RENT_DATES = new ArrayList<>();
+        RECORDS_RENT_DATES.add(rentRecord1);
+        RECORDS_RENT_DATES.add(rentRecord2);
     }
 
     @AfterEach
@@ -159,22 +171,79 @@ class RentCompanyImplTest {
 
     @Test
     void rentCar() {
+        CarsReturnCode carsReturnCode = rentCompany.rentCar(REG_NUMBER_2, LICENSE_ID_1, RENT_DATE_1);
+        assertEquals(NO_CAR, carsReturnCode);
+
+        carsReturnCode = rentCompany.rentCar(REG_NUMBER_1, LICENSE_ID_2, RENT_DATE_1);
+        assertEquals(NO_DRIVER, carsReturnCode);
+
+        carsReturnCode = rentCompany.rentCar(REG_NUMBER_1, LICENSE_ID_1, RENT_DATE_1);
+        assertEquals(OK, carsReturnCode);
+
+        carsReturnCode = rentCompany.rentCar(REG_NUMBER_1, LICENSE_ID_1, RENT_DATE_1);
+        assertEquals(OK, carsReturnCode);
+
+        car1.setInUse(true);
+        carsReturnCode = rentCompany.rentCar(REG_NUMBER_1, LICENSE_ID_1, RENT_DATE_1);
+        assertEquals(CAR_IN_USE, carsReturnCode);
+
+        car1.setInUse(false);
+        car1.setIfRemoved(true);
+        carsReturnCode = rentCompany.rentCar(REG_NUMBER_1, LICENSE_ID_1, RENT_DATE_1);
+        assertEquals(CAR_REMOVED, carsReturnCode);
     }
 
     @Test
     void getCarsDriver() {
+        assertEquals(0, rentCompany.getCarsDriver(LICENSE_ID_1).size());
+        rentCompany.rentCar(REG_NUMBER_1, LICENSE_ID_1, RENT_DATE_1);
+        rentCompany.addModel(model2);
+        rentCompany.addCar(car2);
+        rentCompany.rentCar(REG_NUMBER_2, LICENSE_ID_1, RENT_DATE_1);
+
+        CARS_DRIVER.sort(Comparator.comparing(Car::getRegNumber));
+        List<Car> actual = rentCompany.getCarsDriver(LICENSE_ID_1);
+        actual.sort(Comparator.comparing(Car::getRegNumber));
+        assertEquals(CARS_DRIVER, actual);
     }
 
     @Test
     void getDriversCar() {
+        assertEquals(0, rentCompany.getDriversCar(REG_NUMBER_1).size());
+        rentCompany.rentCar(REG_NUMBER_1, LICENSE_ID_1, RENT_DATE_1);
+        rentCompany.addDriver(driver2);
+        rentCompany.rentCar(REG_NUMBER_1, LICENSE_ID_2, RENT_DATE_1);
+
+        DRIVERS_CAR.sort(Comparator.comparing(Driver::getLicenseId));
+        List<Driver> actual = rentCompany.getDriversCar(REG_NUMBER_1);
+        actual.sort(Comparator.comparing(Driver::getLicenseId));
+        assertEquals(DRIVERS_CAR, actual);
     }
 
     @Test
     void getCarsModel() {
+        assertEquals(0, rentCompany.getCarsModel(MODEL_NAME_1).size());
+        rentCompany.rentCar(REG_NUMBER_1, LICENSE_ID_1, RENT_DATE_1);
+        rentCompany.addCar(car3);
+        rentCompany.rentCar(REG_NUMBER_3, LICENSE_ID_1, RENT_DATE_1);
+
+        CARS_MODEL.sort(Comparator.comparing(Car::getRegNumber));
+        List<Car> actual = rentCompany.getCarsModel(MODEL_NAME_1);
+        actual.sort(Comparator.comparing(Car::getRegNumber));
+        assertEquals(CARS_MODEL, actual);
     }
 
     @Test
     void getRentRecordsAtDates() {
+        assertEquals(0, rentCompany.getRentRecordsAtDates(LocalDate.MIN, LocalDate.MAX).size());
+        rentCompany.rentCar(REG_NUMBER_1, LICENSE_ID_1, RENT_DATE_1);
+        rentCompany.rentCar(REG_NUMBER_1, LICENSE_ID_1, RENT_DATE_2);
+        rentCompany.rentCar(REG_NUMBER_1, LICENSE_ID_1, RENT_DATE_3);
+
+        RECORDS_RENT_DATES.sort(Comparator.comparing(RentRecord::getRegNumber));
+        List<RentRecord> actual = rentCompany.getRentRecordsAtDates(RENT_DATE_1, RENT_DATE_2);
+        actual.sort(Comparator.comparing(RentRecord::getRegNumber));
+        assertEquals(RECORDS_RENT_DATES, actual);
     }
 
     @Test

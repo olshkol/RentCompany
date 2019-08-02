@@ -101,4 +101,18 @@ public class RentRecord implements Serializable {
     public int hashCode() {
         return regNumber != null ? regNumber.hashCode() : 0;
     }
+
+    @Override
+    public String toString() {
+        return "RentRecord{" +
+                "regNumber='" + regNumber + '\'' +
+                ", licenseId=" + licenseId +
+                ", rentDate=" + rentDate +
+                ", returnDate=" + returnDate +
+                ", rentDays=" + rentDays +
+                ", damages=" + damages +
+                ", tankPercent=" + tankPercent +
+                ", cost=" + cost +
+                '}';
+    }
 }

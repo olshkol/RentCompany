@@ -5,8 +5,6 @@ import main.util.Persistable;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static main.cars.dto.CarsReturnCode.*;
 
@@ -20,7 +18,7 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     private HashMap<String, List<Car>> modelCars = new HashMap<>();
     private TreeMap<LocalDate, List<RentRecord>> records = new TreeMap<>();
 
-    public static RentCompany restoreFromFile(String fileName){
+    public static RentCompany restoreFromFile(String fileName) {
         // TODO (31.07.2019) (restoreFromFile)
         return null;
     }
@@ -74,32 +72,81 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
 
     @Override
     public CarsReturnCode rentCar(String regNumber, long licenseId, LocalDate rentDate) {
-        // TODO (02.08.2019) (rentCar)
-        return null;
+        RentRecord record;
+        if (!cars.containsKey(regNumber))
+            return NO_CAR;
+        else if (!drivers.containsKey(licenseId))
+            return NO_DRIVER;
+        else {
+            Car car = cars.get(regNumber);
+            if (car.isInUse())
+                return CAR_IN_USE;
+            else if (car.isIfRemoved())
+                return CAR_REMOVED;
+            else {
+                record = new RentRecord(regNumber, licenseId, rentDate);
+                addRecord(carRecords, regNumber, record);
+                addRecord(driverRecords, licenseId, record);
+                addRecord(modelCars, car.getModelName(), car);
+                addRecord(records, rentDate, record);
+                return OK;
+            }
+
+        }
+    }
+
+    private static <K, V> void addRecord(Map<K, List<V>> records, K key, V record) {
+        if (records.putIfAbsent(key, new ArrayList<>() {{
+            add(record);
+        }}) != null)
+            records.get(key).add(record);
     }
 
     @Override
     public List<Car> getCarsDriver(long licenseId) {
-        // TODO (02.08.2019) (getCarsDriver)
-        return null;
+        Set<Car> res = new HashSet<>();
+        List<RentRecord> rentRecords = driverRecords.getOrDefault(licenseId, new ArrayList<>());
+        for (RentRecord rentRecord : rentRecords) {
+            String regNumber = rentRecord.getRegNumber();
+            if (cars.containsKey(regNumber))
+                res.add(cars.get(regNumber));
+        }
+        return new ArrayList<>(res);
     }
 
     @Override
     public List<Driver> getDriversCar(String regNumber) {
-        // TODO (02.08.2019) (getDriversCar)
-        return null;
+        Set<Driver> res = new HashSet<>();
+        List<RentRecord> rentRecords = carRecords.getOrDefault(regNumber, new ArrayList<>());
+        for (RentRecord rentRecord : rentRecords) {
+            long licenseId = rentRecord.getLicenseId();
+            if (drivers.containsKey(licenseId))
+                res.add(drivers.get(licenseId));
+        }
+        return new ArrayList<>(res);
     }
 
     @Override
     public List<Car> getCarsModel(String modelName) {
-        // TODO (02.08.2019) (getCarsModel)
-        return null;
+        Set<Car> res = new HashSet<>();
+        List<Car> rentRecords = modelCars.getOrDefault(modelName, new ArrayList<>());
+        for (Car car : rentRecords) {
+            String regNumber = car.getRegNumber();
+            if (cars.containsKey(regNumber))
+                res.add(cars.get(regNumber));
+        }
+        return new ArrayList<>(res);
     }
 
     @Override
     public List<RentRecord> getRentRecordsAtDates(LocalDate from, LocalDate to) {
-        // TODO (02.08.2019) (getRentRecordsAtDates)
-        return null;
+        List<RentRecord> res = new ArrayList<>();
+        for (Map.Entry<LocalDate, List<RentRecord>> pair : records.entrySet()) {
+            LocalDate date = pair.getKey();
+            if (date.isAfter(from.minusDays(1)) && date.isBefore(to.plusDays(1)))
+                res.addAll(pair.getValue());
+        }
+        return res;
     }
 
     @Override
