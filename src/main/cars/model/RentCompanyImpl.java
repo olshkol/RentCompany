@@ -5,6 +5,7 @@ import main.util.Persistable;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static main.cars.dto.CarsReturnCode.*;
@@ -105,37 +106,28 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
 
     @Override
     public List<Car> getCarsDriver(long licenseId) {
-        return  cars.values().stream()
-                .filter(
-                        car -> driverRecords.getOrDefault(licenseId, new ArrayList<>()).stream()
-                                .anyMatch(rentRecord -> rentRecord.getRegNumber().equals(car.getRegNumber()))
-                )
-                .distinct()
-                .collect(Collectors.toList());
+        return getFilteredRecords(licenseId, cars, driverRecords, RentRecord::getRegNumber, Car::getRegNumber);
     }
 
     @Override
     public List<Driver> getDriversCar(String regNumber) {
-        Set<Driver> res = new HashSet<>();
-        List<RentRecord> rentRecords = carRecords.getOrDefault(regNumber, new ArrayList<>());
-        for (RentRecord rentRecord : rentRecords) {
-            long licenseId = rentRecord.getLicenseId();
-            if (drivers.containsKey(licenseId))
-                res.add(drivers.get(licenseId));
-        }
-        return new ArrayList<>(res);
+        return getFilteredRecords(regNumber, drivers, carRecords, RentRecord::getLicenseId, Driver::getLicenseId);
     }
 
     @Override
     public List<Car> getCarsModel(String modelName) {
-        Set<Car> res = new HashSet<>();
-        List<Car> rentRecords = modelCars.getOrDefault(modelName, new ArrayList<>());
-        for (Car car : rentRecords) {
-            String regNumber = car.getRegNumber();
-            if (cars.containsKey(regNumber))
-                res.add(cars.get(regNumber));
-        }
-        return new ArrayList<>(res);
+        return getFilteredRecords(modelName, cars, modelCars, Car::getRegNumber, Car::getRegNumber);
+    }
+
+    private static<E, P, R, K, U> List<E> getFilteredRecords(P param, HashMap<K, E> database, HashMap<P, List<R>> records,
+                       Function<R, U> getterParam1, Function<E, U> getterParam2){
+        return database.values().stream()
+                .filter(
+                        obj -> records.getOrDefault(param, new ArrayList<>()).stream()
+                                .anyMatch(r -> getterParam1.apply(r).equals(getterParam2.apply(obj)))
+                )
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     @Override
