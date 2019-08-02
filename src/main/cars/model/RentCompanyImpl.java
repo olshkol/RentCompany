@@ -5,6 +5,7 @@ import main.util.Persistable;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static main.cars.dto.CarsReturnCode.*;
 
@@ -104,14 +105,13 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
 
     @Override
     public List<Car> getCarsDriver(long licenseId) {
-        Set<Car> res = new HashSet<>();
-        List<RentRecord> rentRecords = driverRecords.getOrDefault(licenseId, new ArrayList<>());
-        for (RentRecord rentRecord : rentRecords) {
-            String regNumber = rentRecord.getRegNumber();
-            if (cars.containsKey(regNumber))
-                res.add(cars.get(regNumber));
-        }
-        return new ArrayList<>(res);
+        return  cars.values().stream()
+                .filter(
+                        car -> driverRecords.getOrDefault(licenseId, new ArrayList<>()).stream()
+                                .anyMatch(rentRecord -> rentRecord.getRegNumber().equals(car.getRegNumber()))
+                )
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     @Override
