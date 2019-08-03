@@ -36,6 +36,8 @@ class RentCompanyImplTest {
     private static final String COUNTRY_3 = "Russia";
     private static final int PRICE_DAY_3 = 100;
 
+    private static final String MODEL_NAME_4 = "1100";
+
     private static final String MODEL_NAME_REMOVED = "21";
 
     private static final String MODEL_NAME_NEW = "2107";
@@ -43,6 +45,7 @@ class RentCompanyImplTest {
     private Model model1;
     private Model model2;
     private Model model3;
+    private Model model4;
     private Model modelNew;
     private Model modelRemoved;
 
@@ -56,10 +59,19 @@ class RentCompanyImplTest {
     private static final int BIRTH_YEAR_2 = 1990;
     private static final String PHONE_2 = "+97253-222-22-22";
 
+    private static final long LICENSE_ID_3 = 876543210;
+    private static final long LICENSE_ID_4 = 765432109;
+    private static final long LICENSE_ID_5 = 654321098;
+    private static final long LICENSE_ID_6 = 543210987;
+
     private static final long LICENSE_ID_NEW = 234567890;
 
     private Driver driver1;
     private Driver driver2;
+    private Driver driver3;
+    private Driver driver4;
+    private Driver driver5;
+    private Driver driver6;
     private Driver driverNew;
 
     private static final String REG_NUMBER_1 = "AE1234";
@@ -132,19 +144,29 @@ class RentCompanyImplTest {
         model1 = new Model(MODEL_NAME_1, GAS_TANK_1, COMPANY_1, COUNTRY_1, PRICE_DAY_1);
         model2 = new Model(MODEL_NAME_2, GAS_TANK_2, COMPANY_2, COUNTRY_2, PRICE_DAY_2);
         model3 = new Model(MODEL_NAME_3, GAS_TANK_3, COMPANY_3, COUNTRY_3, PRICE_DAY_3);
+        model4 = new Model(MODEL_NAME_4, GAS_TANK_3, COMPANY_1, COUNTRY_2, PRICE_DAY_3);
         modelNew = new Model(MODEL_NAME_NEW, GAS_TANK_3, COMPANY_3, COUNTRY_3, PRICE_DAY_3);
         modelRemoved = new Model(MODEL_NAME_REMOVED, GAS_TANK_3, COMPANY_3, COUNTRY_3, PRICE_DAY_3);
 
         rentCompany.addModel(model1);
         rentCompany.addModel(model2);
         rentCompany.addModel(model3);
+        rentCompany.addModel(model4);
         rentCompany.addModel(modelRemoved);
 
         driver1 = new Driver(LICENSE_ID_1, DRIVER_NAME_1, BIRTH_YEAR_1, PHONE_1);
         driver2 = new Driver(LICENSE_ID_2, DRIVER_NAME_2, BIRTH_YEAR_2, PHONE_2);
+        driver3 = new Driver(LICENSE_ID_3, DRIVER_NAME_2, BIRTH_YEAR_1, PHONE_1);
+        driver4 = new Driver(LICENSE_ID_4, DRIVER_NAME_1, BIRTH_YEAR_2, PHONE_2);
+        driver5 = new Driver(LICENSE_ID_5, DRIVER_NAME_2, BIRTH_YEAR_1, PHONE_1);
+        driver6 = new Driver(LICENSE_ID_6, DRIVER_NAME_1, BIRTH_YEAR_2, PHONE_2);
         driverNew = new Driver(LICENSE_ID_NEW, DRIVER_NAME_2, BIRTH_YEAR_2, PHONE_2);
         rentCompany.addDriver(driver1);
         rentCompany.addDriver(driver2);
+        rentCompany.addDriver(driver3);
+        rentCompany.addDriver(driver4);
+        rentCompany.addDriver(driver5);
+        rentCompany.addDriver(driver6);
 
         car1 = new Car(REG_NUMBER_1, COLOR_1, MODEL_NAME_1);
         car2 = new Car(REG_NUMBER_2, COLOR_2, MODEL_NAME_2);
@@ -193,9 +215,6 @@ class RentCompanyImplTest {
         carsModel.add(car5);
 
         rentRecord1 = new RentRecord(REG_NUMBER_1, LICENSE_ID_1, rentDate1, RENT_DAYS_1);
-//        rentRecord1.setReturnDate(returnedDate1);
-//        rentRecord1.setTankPercent(TANK_PERCENT_1);
-//        rentRecord1.setDamages(DAMAGES_1);
         rentRecord2 = new RentRecord(REG_NUMBER_3, LICENSE_ID_1, rentDate2, RENT_DAYS_2);
         rentRecord3 = new RentRecord(REG_NUMBER_4, LICENSE_ID_2, rentDate1, RENT_DAYS_2);
         rentRecord4 = new RentRecord(REG_NUMBER_1, LICENSE_ID_2, rentDate2, RENT_DAYS_2);
@@ -213,22 +232,12 @@ class RentCompanyImplTest {
         rentCompany.returnCar(REG_NUMBER_5, LICENSE_ID_1, returnedDate3, DAMAGES_1, TANK_PERCENT_1);
 
         rentRecordRemoved1 = new RentRecord(REG_NUMBER_5, LICENSE_ID_2, rentDate3, RENT_DAYS_1);
-//        rentRecordRemoved1.setReturnDate(returnedDate1);
-//        rentRecordRemoved1.setTankPercent(TANK_PERCENT_1);
-//        rentRecordRemoved1.setDamages(DAMAGES_1);
-
         rentRecordRemoved2 = new RentRecord(REG_NUMBER_5, LICENSE_ID_1, rentDate3, RENT_DAYS_1);
-//        rentRecordRemoved2.setReturnDate(returnedDate2);
-//        rentRecordRemoved2.setTankPercent(TANK_PERCENT_1);
-//        rentRecordRemoved2.setDamages(DAMAGES_1);
 
         removedCars.add(rentRecordRemoved1);
         removedCars.add(rentRecordRemoved2);
 
         returnRentRecord = new RentRecord(REG_NUMBER_2, LICENSE_ID_1, rentDate2, RENT_DAYS_1);
-//        returnRentRecord.setDamages(DAMAGES_1);
-//        returnRentRecord.setReturnDate(returnedDate2);
-//        returnRentRecord.setTankPercent(TANK_PERCENT_1);
 
         //remove model
         removedCarDataByModel = new ArrayList<>();
@@ -401,13 +410,72 @@ class RentCompanyImplTest {
 
     @Test
     void getMostPopularCarModels() {
+        rentCompany.returnCar(REG_NUMBER_3, LICENSE_ID_1, returnedDate2, DAMAGES_1, TANK_PERCENT_1);
+        rentCompany.returnCar(REG_NUMBER_4, LICENSE_ID_2, returnedDate1, DAMAGES_1, TANK_PERCENT_1);
+        rentCompany.returnCar(REG_NUMBER_1, LICENSE_ID_2, returnedDate2, DAMAGES_1, TANK_PERCENT_1);
+
+        rentReturnCarByDriver(5, LICENSE_ID_1, REG_NUMBER_3);
+        rentReturnCarByDriver(1, LICENSE_ID_2, REG_NUMBER_4);
+        rentReturnCarByDriver(11, LICENSE_ID_2, REG_NUMBER_2);
+        rentReturnCarByDriver(4, LICENSE_ID_2, REG_NUMBER_1);
+
+        List<String> mostPopularCarModels = rentCompany.getMostPopularCarModels(rentDate1, rentDate2, 20, 30);
+        List<String> threeMostPopularCarModels = new ArrayList<>();
+        threeMostPopularCarModels.add(MODEL_NAME_2);
+        threeMostPopularCarModels.add(MODEL_NAME_1);
+        threeMostPopularCarModels.add(MODEL_NAME_3);
+
+        assertEquals(threeMostPopularCarModels, mostPopularCarModels);
     }
 
     @Test
     void getMostProfitableCarModels() {
+        rentCompany.returnCar(REG_NUMBER_3, LICENSE_ID_1, returnedDate2, DAMAGES_1, TANK_PERCENT_1);
+        rentCompany.returnCar(REG_NUMBER_4, LICENSE_ID_2, returnedDate1, DAMAGES_1, TANK_PERCENT_1);
+        rentCompany.returnCar(REG_NUMBER_1, LICENSE_ID_2, returnedDate2, DAMAGES_1, TANK_PERCENT_1);
+
+        makeProfitableCarStatistics(3, REG_NUMBER_1);
+        makeProfitableCarStatistics(7, REG_NUMBER_2);
+        makeProfitableCarStatistics(2, REG_NUMBER_3);
+        makeProfitableCarStatistics(3, REG_NUMBER_4);
+
+        List<String> mostProfitableCarModels = rentCompany.getMostProfitableCarModels(rentDate1, rentDate2);
+
+        List<String> threeMostProfitableModels = new ArrayList<>();
+        threeMostProfitableModels.add(MODEL_NAME_2);
+        threeMostProfitableModels.add(MODEL_NAME_1);
+        threeMostProfitableModels.add(MODEL_NAME_3);
+
+        assertEquals(threeMostProfitableModels, mostProfitableCarModels);
+    }
+
+    private void makeProfitableCarStatistics(int count, String regNumber){
+        for (int i = 0; i < count; i++) {
+            rentCompany.rentCar(regNumber, LICENSE_ID_2, rentDate1, RENT_DAYS_1);
+            rentCompany.returnCar(regNumber, LICENSE_ID_2, returnedDate1, DAMAGES_1, TANK_PERCENT_1);
+        }
     }
 
     @Test
     void getMostActiveDrivers() {
+        rentReturnCarByDriver(5, LICENSE_ID_3, REG_NUMBER_2);
+        rentReturnCarByDriver(1, LICENSE_ID_4, REG_NUMBER_2);
+        rentReturnCarByDriver(11, LICENSE_ID_5, REG_NUMBER_2);
+        rentReturnCarByDriver(4, LICENSE_ID_6, REG_NUMBER_2);
+
+        List<Driver> mostActiveDrivers = rentCompany.getMostActiveDrivers();
+        List<Driver> threeMostActiveDrivers = new ArrayList<>();
+        threeMostActiveDrivers.add(driver5);
+        threeMostActiveDrivers.add(driver3);
+        threeMostActiveDrivers.add(driver6);
+
+        assertEquals(threeMostActiveDrivers ,mostActiveDrivers);
+    }
+
+    private void rentReturnCarByDriver(int count, long license, String regNumber){
+        for (int i = 0; i < count; i++) {
+            rentCompany.rentCar(regNumber, license, rentDate1, RENT_DAYS_1);
+            rentCompany.returnCar(regNumber, license, returnedDate1, DAMAGES_1,TANK_PERCENT_1);
+        }
     }
 }

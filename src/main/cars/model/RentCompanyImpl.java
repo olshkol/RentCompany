@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static main.cars.Config.*;
 import static main.cars.dto.CarsReturnCode.*;
 
 public class RentCompanyImpl extends AbstractRentCompany implements Persistable {
@@ -109,8 +110,8 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
 
     private <K, V> void addRecord(Map<K, List<V>> records, K key, V record) {
         if (records.putIfAbsent(key, new ArrayList<>() {{
-                                                            add(record);
-                                                        }}) != null)
+            add(record);
+        }}) != null)
             records.get(key).add(record);
     }
 
@@ -223,22 +224,53 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
         else car.setState(State.GOOD);
     }
 
+    private boolean isProperAge(RentRecord r, int fromAge, int toAge) {
+        LocalDate rentDate = r.getRentDate();
+        Driver driver = getDriver(r.getLicenseId());
+        int driverAge = rentDate.getYear() - driver.getBirthYear();
+        return driverAge >= fromAge && driverAge < toAge;
+    }
+
     @Override
     public List<String> getMostPopularCarModels(LocalDate dateFrom, LocalDate dateTo, int ageFrom, int ageTo) {
-        // TODO (02.08.2019) (getMostPopularCarModels)
-        return null;
+        return records.subMap(dateFrom, dateTo.plusDays(1)).values().stream()
+                .flatMap(List::stream)
+                .filter(rentRecord -> isProperAge(rentRecord, ageFrom, ageTo))
+                .collect(Collectors.groupingBy(
+                        rentRecord -> cars.get(rentRecord.getRegNumber()).getModelName(),
+                        Collectors.summingInt(RentRecord::getRentDays)))
+                .entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(COUNT_MOST_POPULAR_MODELS)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<String> getMostProfitableCarModels(LocalDate dateFrom, LocalDate dateTo) {
-        // TODO (02.08.2019) (getMostProfitableCarModels)
-        return null;
+        return records.subMap(dateFrom, dateTo.plusDays(1)).values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.groupingBy(
+                        rentRecord -> cars.get(rentRecord.getRegNumber()).getModelName(),
+                        Collectors.summingDouble(RentRecord::getCost)))
+                .entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(COUNT_MOST_PROFITABLE_CAR_MODELS)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<Driver> getMostActiveDrivers() {
-        // TODO (02.08.2019) (getMostActiveDrivers)
-        return null;
+        return drivers.values().stream().collect(Collectors.toMap(
+                driver -> driver,
+                driver -> driverRecords.getOrDefault(driver.getLicenseId(), new ArrayList<>()).size()
+        ))
+                .entrySet().stream()
+                .sorted(Map.Entry.<Driver, Integer>comparingByValue().reversed())
+                .limit(COUNT_MOST_ACTIVE_DRIVES)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     public long getCountCars() {
