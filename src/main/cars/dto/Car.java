@@ -8,7 +8,7 @@ public class Car implements Serializable {
     private State state;
     private String modelName;
     private boolean inUse;
-    private boolean ifRemoved;
+    private boolean removed;
 
     public Car() { }
 
@@ -18,7 +18,7 @@ public class Car implements Serializable {
         this.modelName = modelName;
         this.state = State.EXCELLENT;
         this.inUse = false;
-        this.ifRemoved = false;
+        this.removed = false;
     }
 
     public String getRegNumber() {
@@ -41,8 +41,8 @@ public class Car implements Serializable {
         return inUse;
     }
 
-    public boolean isIfRemoved() {
-        return ifRemoved;
+    public boolean isRemoved() {
+        return removed;
     }
 
     public void setState(State state) {
@@ -53,8 +53,8 @@ public class Car implements Serializable {
         this.inUse = inUse;
     }
 
-    public void setIfRemoved(boolean ifRemoved) {
-        this.ifRemoved = ifRemoved;
+    public void setRemoved(boolean removed) {
+        this.removed = removed;
     }
 
     @Override
@@ -65,7 +65,7 @@ public class Car implements Serializable {
                 ", state=" + state +
                 ", modelName='" + modelName + '\'' +
                 ", inUse=" + inUse +
-                ", ifRemoved=" + ifRemoved +
+                ", removed=" + removed +
                 '}';
     }
 

@@ -18,7 +18,7 @@ public interface RentCompany extends Serializable {
     Car getCar(String regNumber);
     Driver getDriver(long licenseId);
 
-    CarsReturnCode rentCar(String regNumber, long licenseId, LocalDate rentDate); //OK, NO_CAR, NO_DRIVER, CAR_REMOVED, CAR_IN_USE
+    CarsReturnCode rentCar(String regNumber, long licenseId, LocalDate rentDate, int rentDays); //OK, NO_CAR, NO_DRIVER, CAR_REMOVED, CAR_IN_USE
     List<Car> getCarsDriver(long licenseId);
     List<Driver> getDriversCar(String regNumber);
     List<Car> getCarsModel(String modelName);
@@ -26,9 +26,11 @@ public interface RentCompany extends Serializable {
 
     RemovedCarData removeCar(String regNumber);
     List<RemovedCarData> removeModel(String modelName);
-    RemovedCarData returnCar(String regNumber, long licenseId, LocalDate returnDate, int damages, int tankPercent);
+    RentRecord returnCar(String regNumber, long licenseId, LocalDate returnDate, int damages, int tankPercent);
 
     List<String> getMostPopularCarModels(LocalDate dateFrom, LocalDate dateTo, int ageFrom, int ageTo);
     List<String> getMostProfitableCarModels(LocalDate dateFrom, LocalDate dateTo);
     List<Driver> getMostActiveDrivers();
+
+    long getCountCars();
 }

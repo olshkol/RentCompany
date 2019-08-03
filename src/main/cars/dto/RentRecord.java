@@ -3,7 +3,6 @@ package main.cars.dto;
 import java.io.Serializable;
 import java.time.LocalDate;
 
-//договор создаем когда взяли машину, и завершаем когда вернули
 public class RentRecord implements Serializable {
     private String regNumber;
     private long licenseId;
@@ -17,10 +16,11 @@ public class RentRecord implements Serializable {
     public RentRecord() {
     }
 
-    public RentRecord(String regNumber, long licenseId, LocalDate rentDate) {
+    public RentRecord(String regNumber, long licenseId, LocalDate rentDate, int rentDays) {
         this.regNumber = regNumber;
         this.licenseId = licenseId;
         this.rentDate = rentDate;
+        this.rentDays = rentDays;
     }
 
     public String getRegNumber() {
@@ -94,12 +94,17 @@ public class RentRecord implements Serializable {
 
         RentRecord that = (RentRecord) o;
 
-        return regNumber != null ? regNumber.equals(that.regNumber) : that.regNumber == null;
+        if (licenseId != that.licenseId) return false;
+        if (regNumber != null ? !regNumber.equals(that.regNumber) : that.regNumber != null) return false;
+        return rentDate != null ? rentDate.equals(that.rentDate) : that.rentDate == null;
     }
 
     @Override
     public int hashCode() {
-        return regNumber != null ? regNumber.hashCode() : 0;
+        int result = regNumber != null ? regNumber.hashCode() : 0;
+        result = 31 * result + (int) (licenseId ^ (licenseId >>> 32));
+        result = 31 * result + (rentDate != null ? rentDate.hashCode() : 0);
+        return result;
     }
 
     @Override
@@ -108,11 +113,11 @@ public class RentRecord implements Serializable {
                 "regNumber='" + regNumber + '\'' +
                 ", licenseId=" + licenseId +
                 ", rentDate=" + rentDate +
-                ", returnDate=" + returnDate +
-                ", rentDays=" + rentDays +
-                ", damages=" + damages +
-                ", tankPercent=" + tankPercent +
-                ", cost=" + cost +
+               // ", returnDate=" + returnDate +
+               // ", rentDays=" + rentDays +
+               // ", damages=" + damages +
+               // ", tankPercent=" + tankPercent +
+              //  ", cost=" + cost +
                 '}';
     }
 }
