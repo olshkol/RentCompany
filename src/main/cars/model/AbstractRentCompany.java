@@ -1,6 +1,7 @@
 package main.cars.model;
 
 public abstract class AbstractRentCompany implements RentCompany {
+    private static final long serialVersionUID = 6980361909005366533L;
     protected int finePercent; // percent of fine per delay day
     protected int gasPrice; // liter price of rent company
 
@@ -31,5 +32,23 @@ public abstract class AbstractRentCompany implements RentCompany {
                 "finePercent=" + finePercent +
                 ", gasPrice=" + gasPrice +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AbstractRentCompany)) return false;
+
+        AbstractRentCompany that = (AbstractRentCompany) o;
+
+        if (finePercent != that.finePercent) return false;
+        return gasPrice == that.gasPrice;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = finePercent;
+        result = 31 * result + gasPrice;
+        return result;
     }
 }

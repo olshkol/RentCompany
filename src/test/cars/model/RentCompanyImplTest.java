@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import static main.cars.Config.FILENAME;
+import static main.cars.Config.PATH_DATABASE;
 import static main.cars.dto.CarsReturnCode.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -259,10 +261,14 @@ class RentCompanyImplTest {
 
     @Test
     void restoreFromFile() {
+        RentCompanyImpl restoredRentCompany = assertDoesNotThrow(() ->
+                (RentCompanyImpl) RentCompanyImpl.restoreFromFile(PATH_DATABASE + FILENAME));
+        assertEquals(restoredRentCompany, rentCompany);
     }
 
     @Test
     void save() {
+        assertDoesNotThrow(() -> ((RentCompanyImpl)rentCompany).save(PATH_DATABASE + FILENAME));
     }
 
     @Test

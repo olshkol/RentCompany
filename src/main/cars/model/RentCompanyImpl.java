@@ -3,6 +3,7 @@ package main.cars.model;
 import main.cars.dto.*;
 import main.util.Persistable;
 
+import java.io.*;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.*;
@@ -13,6 +14,8 @@ import static main.cars.Config.*;
 import static main.cars.dto.CarsReturnCode.*;
 
 public class RentCompanyImpl extends AbstractRentCompany implements Persistable {
+    private static final long serialVersionUID = 6980361909005366533L;
+
     private HashMap<String, Car> cars = new HashMap<>(); // key - carNumber, value - car
     private HashMap<Long, Driver> drivers = new HashMap<>(); // key - licenseId
     private HashMap<String, Model> models = new HashMap<>(); // key - modelName
@@ -23,13 +26,22 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     private TreeMap<LocalDate, List<RentRecord>> records = new TreeMap<>();
 
     public static RentCompany restoreFromFile(String fileName) {
-        // TODO (31.07.2019) (restoreFromFile)
-        return null;
+        RentCompany rentCompany = null;
+        try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(fileName))) {
+            rentCompany = (RentCompany) objectInputStream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return rentCompany;
     }
 
     @Override
     public void save(String fileName) {
-        // TODO (31.07.2019) (save)
+        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(fileName))) {
+            objectOutputStream.writeObject(this);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -275,5 +287,36 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
 
     public long getCountCars() {
         return cars.values().stream().filter(car -> !car.isRemoved()).count();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof RentCompanyImpl)) return false;
+        if (!super.equals(o)) return false;
+
+        RentCompanyImpl that = (RentCompanyImpl) o;
+
+        if (cars != null ? !cars.equals(that.cars) : that.cars != null) return false;
+        if (drivers != null ? !drivers.equals(that.drivers) : that.drivers != null) return false;
+        if (models != null ? !models.equals(that.models) : that.models != null) return false;
+        if (modelCars != null ? !modelCars.equals(that.modelCars) : that.modelCars != null) return false;
+        if (carRecords != null ? !carRecords.equals(that.carRecords) : that.carRecords != null) return false;
+        if (driverRecords != null ? !driverRecords.equals(that.driverRecords) : that.driverRecords != null)
+            return false;
+        return records != null ? records.equals(that.records) : that.records == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (cars != null ? cars.hashCode() : 0);
+        result = 31 * result + (drivers != null ? drivers.hashCode() : 0);
+        result = 31 * result + (models != null ? models.hashCode() : 0);
+        result = 31 * result + (modelCars != null ? modelCars.hashCode() : 0);
+        result = 31 * result + (carRecords != null ? carRecords.hashCode() : 0);
+        result = 31 * result + (driverRecords != null ? driverRecords.hashCode() : 0);
+        result = 31 * result + (records != null ? records.hashCode() : 0);
+        return result;
     }
 }
