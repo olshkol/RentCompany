@@ -1,6 +1,6 @@
 package test.cars.model;
 
-import main.cars.dto.*;
+import cars.model.*;
 import main.cars.model.AbstractRentCompany;
 import main.cars.model.RentCompanyImpl;
 import org.junit.jupiter.api.AfterEach;
@@ -12,9 +12,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import static cars.model.CarsReturnCode.*;
 import static main.cars.Config.FILENAME;
 import static main.cars.Config.PATH_DATABASE;
-import static main.cars.dto.CarsReturnCode.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RentCompanyImplTest {

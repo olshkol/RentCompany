@@ -1,6 +1,7 @@
 package main.cars.model;
 
-import main.cars.dto.*;
+import cars.model.*;
+import main.cars.model.annotations.Routing;
 import main.util.Persistable;
 
 import java.io.*;
@@ -10,8 +11,9 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static cars.model.CarsReturnCode.*;
+import static cars.routing.Routing.*;
 import static main.cars.Config.*;
-import static main.cars.dto.CarsReturnCode.*;
 
 public class RentCompanyImpl extends AbstractRentCompany implements Persistable {
     private static final long serialVersionUID = 6980361909005366533L;
@@ -45,6 +47,7 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     }
 
     @Override
+    @Routing(ADD_MODEL)
     public CarsReturnCode addModel(Model model) {
         String modelName = model.getModelName();
         if (models.containsKey(modelName)) { // if model contains in database
@@ -56,14 +59,15 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     }
 
     @Override
+    @Routing(ADD_CAR)
     public CarsReturnCode addCar(Car car) {
         if (cars.containsKey(car.getRegNumber())) {
-            if (!car.isRemoved())
+            if (!cars.get(car.getRegNumber()).isRemoved())
                 return CAR_EXISTS;
-            else {
-                car.setRemoved(false);
-                return OK;
-            }
+            //TODO if car was removed, but adding new car with same RegNumber
+            cars.get(car.getRegNumber()).setRemoved(false);
+            return OK;
+
         }
         if (!models.containsKey(car.getModelName()))
             return NO_MODEL;
@@ -74,6 +78,7 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     }
 
     @Override
+    @Routing(ADD_DRIVER)
     public CarsReturnCode addDriver(Driver driver) {
         if (drivers.containsKey(driver.getLicenseId()))
             return DRIVER_EXISTS;
@@ -82,21 +87,25 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     }
 
     @Override
+    @Routing(GET_MODEL)
     public Model getModel(String modelName) {
         return models.get(modelName);
     }
 
     @Override
+    @Routing(GET_CAR)
     public Car getCar(String regNumber) {
         return cars.get(regNumber);
     }
 
     @Override
+    @Routing(GET_DRIVER)
     public Driver getDriver(long licenseId) {
         return drivers.get(licenseId);
     }
 
     @Override
+    @Routing(RENT_CAR)
     public CarsReturnCode rentCar(String regNumber, long licenseId, LocalDate rentDate, int rentDays) {
         RentRecord record;
         if (!cars.containsKey(regNumber))
@@ -128,16 +137,19 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     }
 
     @Override
+    @Routing(GET_DRIVER_CARS)
     public List<Car> getCarsDriver(long licenseId) {
         return getFilteredRecords(licenseId, cars, driverRecords, RentRecord::getRegNumber, Car::getRegNumber);
     }
 
     @Override
+    @Routing(GET_CAR_DRIVERS)
     public List<Driver> getDriversCar(String regNumber) {
         return getFilteredRecords(regNumber, drivers, carRecords, RentRecord::getLicenseId, Driver::getLicenseId);
     }
 
     @Override
+    @Routing(GET_MODEL_CARS)
     public List<Car> getCarsModel(String modelName) {
         return getFilteredRecords(modelName, cars, modelCars, Car::getRegNumber, Car::getRegNumber);
     }
@@ -154,6 +166,7 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     }
 
     @Override
+    @Routing(GET_RECORDS)
     public List<RentRecord> getRentRecordsAtDates(LocalDate from, LocalDate to) {
         List<RentRecord> res = new ArrayList<>();
         for (Map.Entry<LocalDate, List<RentRecord>> pair : records.entrySet()) {
@@ -165,6 +178,7 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     }
 
     @Override
+    @Routing(REMOVE_CAR)
     public RemovedCarData removeCar(String regNumber) {
         if (!cars.containsKey(regNumber))
             return null;
@@ -178,6 +192,7 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     }
 
     @Override
+    @Routing(REMOVE_MODEL)
     public List<RemovedCarData> removeModel(String modelName) {
         List<Car> carsByModel = modelCars.getOrDefault(modelName, new ArrayList<>());
         if (carsByModel.isEmpty()) {
@@ -196,6 +211,7 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     }
 
     @Override
+    @Routing(RETURN_CAR)
     public RentRecord returnCar(String regNumber, long licenseId, LocalDate returnDate, int damages, int tankPercent) {
         List<RentRecord> rentRecords = carRecords.get(regNumber);
         RentRecord rentRecord = rentRecords.get(rentRecords.size() - 1);
@@ -244,6 +260,7 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     }
 
     @Override
+    @Routing(GET_MOST_POPULAR_MODELS)
     public List<String> getMostPopularCarModels(LocalDate dateFrom, LocalDate dateTo, int ageFrom, int ageTo) {
         return records.subMap(dateFrom, dateTo.plusDays(1)).values().stream()
                 .flatMap(List::stream)
@@ -259,6 +276,7 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     }
 
     @Override
+    @Routing(GET_MOST_PROFITABLE_MODELS)
     public List<String> getMostProfitableCarModels(LocalDate dateFrom, LocalDate dateTo) {
         return records.subMap(dateFrom, dateTo.plusDays(1)).values().stream()
                 .flatMap(List::stream)
@@ -273,6 +291,7 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     }
 
     @Override
+    @Routing(GET_MOST_ACTIVE_DRIVERS)
     public List<Driver> getMostActiveDrivers() {
         return drivers.values().stream().collect(Collectors.toMap(
                 driver -> driver,

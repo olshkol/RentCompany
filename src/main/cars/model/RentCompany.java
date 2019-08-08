@@ -1,6 +1,6 @@
 package main.cars.model;
 
-import main.cars.dto.*;
+import cars.model.*;
 
 import java.io.Serializable;
 import java.time.LocalDate;
