@@ -1,6 +1,6 @@
 package test.cars.model;
 
-import cars.model.*;
+import cars.dto.*;
 import main.cars.model.AbstractRentCompany;
 import main.cars.model.RentCompanyImpl;
 import org.junit.jupiter.api.AfterEach;
@@ -12,9 +12,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import static cars.model.CarsReturnCode.*;
-import static main.cars.Config.FILENAME;
-import static main.cars.Config.PATH_DATABASE;
+import static cars.dto.CarsReturnCode.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RentCompanyImplTest {
@@ -262,13 +260,13 @@ class RentCompanyImplTest {
     @Test
     void restoreFromFile() {
         RentCompanyImpl restoredRentCompany = assertDoesNotThrow(() ->
-                (RentCompanyImpl) RentCompanyImpl.restoreFromFile(PATH_DATABASE + FILENAME));
+                (RentCompanyImpl) RentCompanyImpl.restoreFromFile("src/main/resources/database.csv"));
         assertEquals(restoredRentCompany, rentCompany);
     }
 
     @Test
     void save() {
-        assertDoesNotThrow(() -> ((RentCompanyImpl)rentCompany).save(PATH_DATABASE + FILENAME));
+        assertDoesNotThrow(() -> ((RentCompanyImpl)rentCompany).save("src/main/resources/database.csv"));
     }
 
     @Test

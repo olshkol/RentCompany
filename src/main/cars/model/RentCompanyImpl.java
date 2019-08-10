@@ -1,33 +1,40 @@
 package main.cars.model;
 
-import cars.model.*;
+import cars.dto.*;
+import cars.dto.RequestParamCustom;
+
 import main.cars.model.annotations.Routing;
 import main.util.Persistable;
 
 import java.io.*;
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static cars.model.CarsReturnCode.*;
-import static cars.routing.Routing.*;
+import static cars.dto.CarsReturnCode.*;
+import static cars.routing.RoutingPath.*;
 import static main.cars.Config.*;
 
 public class RentCompanyImpl extends AbstractRentCompany implements Persistable {
     private static final long serialVersionUID = 6980361909005366533L;
 
-    private HashMap<String, Car> cars = new HashMap<>(); // key - carNumber, value - car
-    private HashMap<Long, Driver> drivers = new HashMap<>(); // key - licenseId
-    private HashMap<String, Model> models = new HashMap<>(); // key - modelName
+    private ConcurrentHashMap<String, Car> cars = new ConcurrentHashMap<>(); // key - carNumber, value - car
+    private ConcurrentHashMap<Long, Driver> drivers = new ConcurrentHashMap<>(); // key - licenseId
+    private ConcurrentHashMap<String, Model> models = new ConcurrentHashMap<>(); // key - modelName
 
-    private HashMap<String, List<Car>> modelCars = new HashMap<>();
-    private HashMap<String, List<RentRecord>> carRecords = new HashMap<>();
-    private HashMap<Long, List<RentRecord>> driverRecords = new HashMap<>();
-    private TreeMap<LocalDate, List<RentRecord>> records = new TreeMap<>();
+    private ConcurrentHashMap<String, List<Car>> modelCars = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, List<RentRecord>> carRecords = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Long, List<RentRecord>> driverRecords = new ConcurrentHashMap<>();
+    private ConcurrentNavigableMap<LocalDate, List<RentRecord>> records = new ConcurrentSkipListMap<>();
 
-    public static RentCompany restoreFromFile(String fileName) {
+    public synchronized static RentCompany restoreFromFile(String fileName) {
         RentCompany rentCompany = null;
         try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(fileName))) {
             rentCompany = (RentCompany) objectInputStream.readObject();
@@ -38,7 +45,7 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
     }
 
     @Override
-    public void save(String fileName) {
+    public synchronized void save(String fileName) {
         try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(fileName))) {
             objectOutputStream.writeObject(this);
         } catch (IOException e) {
@@ -88,25 +95,28 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
 
     @Override
     @Routing(GET_MODEL)
-    public Model getModel(String modelName) {
+    public Model getModel(@RequestParamCustom(value = "modelName") String modelName) {
         return models.get(modelName);
     }
 
     @Override
     @Routing(GET_CAR)
-    public Car getCar(String regNumber) {
+    public Car getCar(@RequestParamCustom(value = "regNumber") String regNumber) {
         return cars.get(regNumber);
     }
 
     @Override
     @Routing(GET_DRIVER)
-    public Driver getDriver(long licenseId) {
+    public Driver getDriver(@RequestParamCustom(value = "licenseId") long licenseId) {
         return drivers.get(licenseId);
     }
 
     @Override
     @Routing(RENT_CAR)
-    public CarsReturnCode rentCar(String regNumber, long licenseId, LocalDate rentDate, int rentDays) {
+    public CarsReturnCode rentCar(@RequestParamCustom(value = "regNumber") String regNumber,
+                                  @RequestParamCustom(value = "licenseId") long licenseId,
+                                  @RequestParamCustom(value = "rentDate")  LocalDate rentDate,
+                                  @RequestParamCustom(value = "rentDays") int rentDays) {
         RentRecord record;
         if (!cars.containsKey(regNumber))
             return NO_CAR;
@@ -138,23 +148,24 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
 
     @Override
     @Routing(GET_DRIVER_CARS)
-    public List<Car> getCarsDriver(long licenseId) {
+    public List<Car> getCarsDriver(@RequestParamCustom(value = "licenseId") long licenseId) {
         return getFilteredRecords(licenseId, cars, driverRecords, RentRecord::getRegNumber, Car::getRegNumber);
     }
 
     @Override
     @Routing(GET_CAR_DRIVERS)
-    public List<Driver> getDriversCar(String regNumber) {
+    public List<Driver> getDriversCar(@RequestParamCustom(value = "regNumber") String regNumber) {
         return getFilteredRecords(regNumber, drivers, carRecords, RentRecord::getLicenseId, Driver::getLicenseId);
     }
 
     @Override
     @Routing(GET_MODEL_CARS)
-    public List<Car> getCarsModel(String modelName) {
+    public List<Car> getCarsModel(@RequestParamCustom(value = "modelName") String modelName) {
         return getFilteredRecords(modelName, cars, modelCars, Car::getRegNumber, Car::getRegNumber);
     }
 
-    private <E, P, R, K, U> List<E> getFilteredRecords(P param, HashMap<K, E> database, HashMap<P, List<R>> records,
+    private <E, P, R, K, U> List<E> getFilteredRecords(P param, ConcurrentHashMap<K, E> database,
+                                                       ConcurrentHashMap<P, List<R>> records,
                                                        Function<R, U> getterParam1, Function<E, U> getterParam2) {
         return database.values().stream()
                 .filter(
@@ -167,7 +178,8 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
 
     @Override
     @Routing(GET_RECORDS)
-    public List<RentRecord> getRentRecordsAtDates(LocalDate from, LocalDate to) {
+    public List<RentRecord> getRentRecordsAtDates(@RequestParamCustom(value = "fromDate") LocalDate from,
+                                                  @RequestParamCustom(value = "toDate")  LocalDate to) {
         List<RentRecord> res = new ArrayList<>();
         for (Map.Entry<LocalDate, List<RentRecord>> pair : records.entrySet()) {
             LocalDate date = pair.getKey();
@@ -179,7 +191,7 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
 
     @Override
     @Routing(REMOVE_CAR)
-    public RemovedCarData removeCar(String regNumber) {
+    public RemovedCarData removeCar(@RequestParamCustom(value = "regNumber") String regNumber) {
         if (!cars.containsKey(regNumber))
             return null;
         Car car = cars.get(regNumber);
@@ -193,7 +205,7 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
 
     @Override
     @Routing(REMOVE_MODEL)
-    public List<RemovedCarData> removeModel(String modelName) {
+    public List<RemovedCarData> removeModel(@RequestParamCustom(value = "modelName") String modelName) {
         List<Car> carsByModel = modelCars.getOrDefault(modelName, new ArrayList<>());
         if (carsByModel.isEmpty()) {
             models.remove(modelName);
@@ -212,7 +224,11 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
 
     @Override
     @Routing(RETURN_CAR)
-    public RentRecord returnCar(String regNumber, long licenseId, LocalDate returnDate, int damages, int tankPercent) {
+    public RentRecord returnCar(@RequestParamCustom(value = "regNumber") String regNumber,
+                                @RequestParamCustom(value = "licenseId") long licenseId,
+                                @RequestParamCustom(value = "returnDate") LocalDate returnDate,
+                                @RequestParamCustom(value = "damages") int damages,
+                                @RequestParamCustom(value = "tankPercent") int tankPercent) {
         List<RentRecord> rentRecords = carRecords.get(regNumber);
         RentRecord rentRecord = rentRecords.get(rentRecords.size() - 1);
 
@@ -261,7 +277,10 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
 
     @Override
     @Routing(GET_MOST_POPULAR_MODELS)
-    public List<String> getMostPopularCarModels(LocalDate dateFrom, LocalDate dateTo, int ageFrom, int ageTo) {
+    public List<String> getMostPopularCarModels(@RequestParamCustom(value = "fromDate") LocalDate dateFrom,
+                                                @RequestParamCustom(value = "toDate") LocalDate dateTo,
+                                                @RequestParamCustom(value = "ageFrom") int ageFrom,
+                                                @RequestParamCustom(value = "ageTo") int ageTo) {
         return records.subMap(dateFrom, dateTo.plusDays(1)).values().stream()
                 .flatMap(List::stream)
                 .filter(rentRecord -> isProperAge(rentRecord, ageFrom, ageTo))
@@ -277,7 +296,8 @@ public class RentCompanyImpl extends AbstractRentCompany implements Persistable 
 
     @Override
     @Routing(GET_MOST_PROFITABLE_MODELS)
-    public List<String> getMostProfitableCarModels(LocalDate dateFrom, LocalDate dateTo) {
+    public List<String> getMostProfitableCarModels(@RequestParamCustom(value = "fromDate") LocalDate dateFrom,
+                                                   @RequestParamCustom(value = "toDate") LocalDate dateTo) {
         return records.subMap(dateFrom, dateTo.plusDays(1)).values().stream()
                 .flatMap(List::stream)
                 .collect(Collectors.groupingBy(

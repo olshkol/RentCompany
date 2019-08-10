@@ -2,8 +2,8 @@ package main.cars.model;
 
 public abstract class AbstractRentCompany implements RentCompany {
     private static final long serialVersionUID = 6980361909005366533L;
-    protected int finePercent; // percent of fine per delay day
-    protected int gasPrice; // liter price of rent company
+    int finePercent; // percent of fine per delay day
+    int gasPrice; // liter price of rent company
 
     public AbstractRentCompany() {
         finePercent = 15;
